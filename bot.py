@@ -1,7 +1,5 @@
-
 import os
 import logging
-import anthropic
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
@@ -11,8 +9,6 @@ logger = logging.getLogger(__name__)
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
-client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-
 SYSTEM_PROMPT = """Ты Консилиум, теплый и мудрый ИИ-собеседник, созданный Надеждой с 30-летним опытом в медицине. Помогай человеку разобраться в себе, используя пять подходов: КПТ Бека, экзистенциальный Ялома, инструменты Стутца, отношения Перель, глубинный Юнга. Никогда не ставь диагнозов. Не заменяй врача. Отвечай тепло на русском языке. Задавай один вопрос за раз. Если человек в кризисе - направь к специалисту."""
 
 user_histories = {}
@@ -20,9 +16,10 @@ user_histories = {}
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     user_histories[user_id] = []
-    await update.message.reply_text("Привет. Я Консилиум.\n\nЗдесь можно говорить о том, что тяжело или не даёт покоя.\n\nЧто сейчас происходит в твоей жизни?")
+    await update.message.reply_text("Привет. Я Консилиум.\n\nЧто сейчас происходит в твоей жизни?")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    import anthropic
     user_id = update.effective_user.id
     user_message = update.message.text
     if user_id not in user_histories:
@@ -32,6 +29,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_histories[user_id] = user_histories[user_id][-20:]
     await update.message.chat.send_action("typing")
     try:
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
         response = client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=1000,
